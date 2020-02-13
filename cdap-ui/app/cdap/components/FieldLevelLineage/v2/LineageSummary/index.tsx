@@ -278,6 +278,7 @@ class LineageSummary extends React.Component<{ classes }, ILineageState> {
                           fields={tableInfo.fields}
                           type="cause"
                           isActive={isActive}
+                          fieldCount={tableInfo.fieldCount}
                         />
                       );
                     })}
@@ -300,6 +301,7 @@ class LineageSummary extends React.Component<{ classes }, ILineageState> {
                           fields={tableInfo.fields}
                           type="impact"
                           isActive={isActive}
+                          fieldCount={tableInfo.fieldCount}
                         />
                       );
                     })}
