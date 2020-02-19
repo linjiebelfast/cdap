@@ -20,7 +20,7 @@ import { parseQueryString } from 'services/helpers';
 import { getCurrentNamespace } from 'services/NamespaceStore';
 import { MyMetadataApi } from 'api/metadata';
 import { Theme } from 'services/ThemeHelper';
-import { IContextState } from 'components/FieldLevelLineage/v2/Context/FllContext';
+import { IContextState, ITimeType } from 'components/FieldLevelLineage/v2/Context/FllContext';
 
 // types for backend response
 interface IFllEntity {
@@ -69,8 +69,10 @@ export interface ITablesList {
 }
 
 export interface ITableInfo {
-  fields: IField[];
+  fields?: IField[];
   fieldCount?: number;
+  unrelatedFields?: IField[];
+  isExpanded?: boolean;
 }
 
 export interface ITimeParams {
@@ -235,7 +237,7 @@ export function makeTargetFields(
     };
     return field;
   });
-  return targetFields;
+  return { fields: targetFields };
 }
 
 export function getFieldId(fieldname, dataset, namespace, type) {
@@ -410,5 +412,43 @@ export function getOperations(
   MyMetadataApi.getFieldOperations(params).subscribe((res) => {
     const operations = res[direction];
     cb(operations);
+  });
+}
+
+export function fetchUnrelatedFields(
+  namespace: string,
+  tablename: string,
+  type: string,
+  relatedFields: IField[],
+  start: ITimeType,
+  end: ITimeType,
+  cb: (fields: IField[]) => void
+) {
+  // Filter out fields that are already being rendered to maintain field order
+  const getUnrelatedFields = (allFields: string[]) => {
+    const isRelatedField = (fieldId, fields) => {
+      return fields.filter((field) => field.id === fieldId).length > 0;
+    };
+
+    const unrelatedFields = allFields.filter((fieldname) => {
+      const fieldId = getFieldId(fieldname, tablename, namespace, type);
+      return !isRelatedField(fieldId, relatedFields);
+    });
+    return unrelatedFields.map((fieldname) => {
+      const fieldProperties: IField = {
+        type,
+        namespace,
+        name: fieldname,
+        dataset: tablename,
+        id: getFieldId(fieldname, tablename, namespace, type),
+      };
+      return fieldProperties;
+    });
+  };
+  const params = { namespace, entityId: tablename, start, end };
+
+  MyMetadataApi.getFields(params).subscribe((res) => {
+    const unrelatedFields = getUnrelatedFields(res);
+    cb(unrelatedFields);
   });
 }

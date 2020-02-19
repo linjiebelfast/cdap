@@ -275,17 +275,16 @@ class LineageSummary extends React.Component<{ classes }, ILineageState> {
                         <FllTable
                           key={tableId}
                           tableId={tableId}
-                          fields={tableInfo.fields}
+                          tableInfo={tableInfo}
                           type="cause"
                           isActive={isActive}
-                          fieldCount={tableInfo.fieldCount}
                         />
                       );
                     })}
                   </div>
                   <div data-cy="target-fields" className={this.props.classes.summaryCol}>
-                    <FllHeader type="target" total={Object.keys(targetFields).length} />
-                    <FllTable tableId={target} fields={targetFields} type="target" />
+                    <FllHeader type="target" total={targetFields.fields.length} />
+                    <FllTable tableId={target} tableInfo={targetFields} type="target" />
                   </div>
                   <div data-cy="impact-fields" className={this.props.classes.summaryCol}>
                     <FllHeader type="impact" total={Object.keys(visibleImpactSets).length} />
@@ -298,10 +297,9 @@ class LineageSummary extends React.Component<{ classes }, ILineageState> {
                         <FllTable
                           key={tableId}
                           tableId={tableId}
-                          fields={tableInfo.fields}
+                          tableInfo={tableInfo}
                           type="impact"
                           isActive={isActive}
-                          fieldCount={tableInfo.fieldCount}
                         />
                       );
                     })}

@@ -14,15 +14,17 @@
  * the License.
  */
 
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import SortableStickyGrid from 'components/SortableStickyGrid/index.js';
 import withStyles, { WithStyles } from '@material-ui/core/styles/withStyles';
 import createStyles from '@material-ui/core/styles/createStyles';
 import T from 'i18n-react';
 import classnames from 'classnames';
-import { IField } from 'components/FieldLevelLineage/v2/Context/FllContextHelper';
+import { IField, ITableInfo } from 'components/FieldLevelLineage/v2/Context/FllContextHelper';
 import FllField from 'components/FieldLevelLineage/v2/FllTable/FllField';
 import { FllContext, IContextState } from 'components/FieldLevelLineage/v2/Context/FllContext';
+import ExpandableField from 'components/FieldLevelLineage/v2/FllTable/FllExpandableField';
+import If from 'components/If';
 
 // TO DO: Consolidate different fontsizes in ThemeWrapper
 const styles = (theme) => {
@@ -90,73 +92,66 @@ const styles = (theme) => {
 
 interface ITableProps extends WithStyles<typeof styles> {
   tableId?: string;
-  fields?: IField[];
+  tableInfo?: ITableInfo;
   type?: string;
   isActive?: boolean;
-  fieldCount?: number;
 }
 
-function renderGridHeader(fields: IField[], isTarget: boolean, classes) {
+function renderGridHeader(
+  fields: IField[],
+  isTarget: boolean,
+  isExpanded: boolean = false,
+  classes
+) {
   const count: number = fields.length;
   const tableName = fields[0].dataset;
+  const options = { context: count };
   return (
     <div className={classes.tableHeader}>
       <div className="table-name">{tableName}</div>
       <div className={classes.tableSubheader}>
-        {isTarget
-          ? T.translate('features.FieldLevelLineage.v2.FllTable.fieldsCount', {
-              context: count,
-            })
-          : T.translate('features.FieldLevelLineage.v2.FllTable.relatedFieldsCount', {
-              context: count,
-            })}
+        {isTarget || isExpanded
+          ? T.translate('features.FieldLevelLineage.v2.FllTable.fieldsCount', options)
+          : T.translate('features.FieldLevelLineage.v2.FllTable.relatedFieldsCount', options)}
       </div>
     </div>
   );
 }
 
-function renderGridBody(fields: IField[], tableName: string, activeFields = new Set(), classes) {
+function renderGridBody(
+  fields: IField[],
+  tableId: string,
+  activeFields = new Set(),
+  hasUnrelatedFields: boolean = false,
+  isExpanded: boolean = false,
+  handleClick: () => void,
+  classes
+) {
+  const namespace = fields[0].namespace;
   return (
     <div
       className={classes.gridBody}
-      id={tableName}
-      data-tablename={fields[0].dataset}
-      data-namespace={fields[0].namespace}
+      id={tableId}
+      data-tablename={tableId}
+      data-namespace={namespace}
     >
       {fields.map((field) => {
         const isActiveField = activeFields.has(field.id);
         return <FllField key={field.id} field={field} isActive={isActiveField} />;
       })}
+      <If condition={hasUnrelatedFields}>
+        <ExpandableField isExpanded={isExpanded} handleClick={handleClick} />
+      </If>
     </div>
   );
 }
 
-function FllTable({ tableId, fields, type, isActive, fieldCount, classes }: ITableProps) {
+function FllTable({ tableId, tableInfo, type, isActive, classes }: ITableProps) {
   const GRID_HEADERS = [{ property: 'name', label: tableId }];
-  const { target, activeCauseSets, activeImpactSets } = useContext<IContextState>(FllContext);
-  const isTarget = type === 'target';
-  let hasMoreFields = false;
-
-  // check for unrelated cause and impact fields
-  if (type !== 'target' && fields) {
-    hasMoreFields = fieldCount > fields.length;
-  }
-
-  // get fields that are a direct cause or impact to selected field
-  let activeFields = [];
-  if (isActive && !isTarget) {
-    if (type === 'cause' && Object.keys(activeCauseSets).length > 0) {
-      activeFields = activeCauseSets[tableId].fields;
-    } else if (type === 'impact' && Object.keys(activeImpactSets).length > 0) {
-      activeFields = activeImpactSets[tableId].fields;
-    }
-  }
-
-  const activeFieldIds = new Set(
-    activeFields.map((field) => {
-      return field.id;
-    })
-  );
+  const { target, activeCauseSets, activeImpactSets, handleExpandFields } = useContext<
+    IContextState
+  >(FllContext);
+  let fields = tableInfo?.fields;
 
   if (!fields || fields.length === 0) {
     return (
@@ -165,6 +160,44 @@ function FllTable({ tableId, fields, type, isActive, fieldCount, classes }: ITab
       </div>
     );
   }
+
+  const unrelatedFields = tableInfo.unrelatedFields;
+  const fieldCount = tableInfo.fieldCount;
+  const isExpanded = tableInfo.isExpanded || false;
+  const isTarget = type === 'target';
+  const hasUnrelatedFields = fields.length < fieldCount;
+
+  // If there are unrelated fields AND the user has expanded to see all fields
+  // render the unrelated fields
+  if (unrelatedFields && isExpanded) {
+    fields = fields.concat(unrelatedFields);
+  }
+
+  // get fields that are a direct cause or impact to selected field
+  const getActiveFields = () => {
+    let activeFields = [];
+    if (isActive && !isTarget) {
+      if (type === 'cause' && Object.keys(activeCauseSets).length > 0) {
+        activeFields = activeCauseSets[tableId].fields;
+      } else if (type === 'impact' && Object.keys(activeImpactSets).length > 0) {
+        activeFields = activeImpactSets[tableId].fields;
+      }
+    }
+    return activeFields;
+  };
+
+  const activeFieldIds = new Set(
+    getActiveFields().map((field) => {
+      return field.id;
+    })
+  );
+
+  const handleClick = () => {
+    const namespace = fields[0].namespace;
+    const tablename = fields[0].dataset;
+
+    handleExpandFields(namespace, tablename, type);
+  };
 
   return (
     <SortableStickyGrid
@@ -176,8 +209,17 @@ function FllTable({ tableId, fields, type, isActive, fieldCount, classes }: ITab
         { [classes.targetTable]: isTarget },
         { [classes.activeTable]: isActive }
       )}
-      renderGridHeader={renderGridHeader.bind(null, fields, isTarget, classes)}
-      renderGridBody={renderGridBody.bind(this, fields, tableId, activeFieldIds, classes)}
+      renderGridHeader={renderGridHeader.bind(null, fields, isTarget, isExpanded, classes)}
+      renderGridBody={renderGridBody.bind(
+        this,
+        fields,
+        tableId,
+        activeFieldIds,
+        hasUnrelatedFields,
+        isExpanded,
+        handleClick,
+        classes
+      )}
     />
   );
 }
