@@ -81,10 +81,6 @@ const TargetListView: React.FC<ITargetListProps> = ({ classes, onSelect, current
     setSearch(value);
   }
 
-  if (targets.length === 1) {
-    return null;
-  }
-
   let filteredTarget = targets;
   if (search.length > 0) {
     filteredTarget = targets.filter((target) => {
