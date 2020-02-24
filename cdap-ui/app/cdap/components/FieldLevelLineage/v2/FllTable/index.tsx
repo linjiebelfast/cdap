@@ -14,7 +14,7 @@
  * the License.
  */
 
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import SortableStickyGrid from 'components/SortableStickyGrid/index.js';
 import withStyles, { WithStyles } from '@material-ui/core/styles/withStyles';
 import createStyles from '@material-ui/core/styles/createStyles';

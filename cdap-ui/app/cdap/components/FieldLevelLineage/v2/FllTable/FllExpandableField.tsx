@@ -15,21 +15,45 @@
  */
 
 import React from 'react';
+import withStyles, { WithStyles } from '@material-ui/core/styles/withStyles';
 import classnames from 'classnames';
+import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
+import If from 'components/If';
+import T from 'i18n-react';
 
-interface IExpandableFieldProps {
+export const styles = (theme) => {
+  return {
+    root: {
+      color: theme.palette.blue[200],
+      fontSize: '0.92em',
+    },
+  };
+};
+
+interface IExpandableFieldProps extends WithStyles<typeof styles> {
   isExpanded: boolean;
   handleClick: () => void;
 }
 
-function ExpandableField({ isExpanded, handleClick }: IExpandableFieldProps) {
-  const message = isExpanded ? 'Hide unrelated fields' : ' Show unrelated fields ';
+const I18N_PREFIX = 'features.FieldLevelLineage.v2.FllTable.FllExpandableField';
 
+function ExpandableField({ isExpanded, handleClick, classes }: IExpandableFieldProps) {
+  const message = isExpanded
+    ? T.translate(`${I18N_PREFIX}.hideFields`)
+    : T.translate(`${I18N_PREFIX}.showFields`);
   return (
-    <div className={classnames('grid-row', 'grid-link')} onClick={handleClick}>
+    <div className={classnames('grid-row', 'grid-link', classes.root)} onClick={handleClick}>
       {message}
+      <If condition={!isExpanded}>
+        <KeyboardArrowDownIcon />
+      </If>
+      <If condition={isExpanded}>
+        <KeyboardArrowUpIcon />
+      </If>
     </div>
   );
 }
 
-export default ExpandableField;
+const StyledExpandableField = withStyles(styles)(ExpandableField);
+export default StyledExpandableField;
