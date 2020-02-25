@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Cask Data, Inc.
+ * Copyright © 2020 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -34,16 +34,21 @@ export const styles = (theme) => {
 interface IExpandableFieldProps extends WithStyles<typeof styles> {
   isExpanded: boolean;
   handleClick: () => void;
+  tablename: string;
 }
 
 const I18N_PREFIX = 'features.FieldLevelLineage.v2.FllTable.FllExpandableField';
 
-function ExpandableField({ isExpanded, handleClick, classes }: IExpandableFieldProps) {
+function ExpandableField({ isExpanded, handleClick, tablename, classes }: IExpandableFieldProps) {
   const message = isExpanded
     ? T.translate(`${I18N_PREFIX}.hideFields`)
     : T.translate(`${I18N_PREFIX}.showFields`);
   return (
-    <div className={classnames('grid-row', 'grid-link', classes.root)} onClick={handleClick}>
+    <div
+      className={classnames('grid-row', 'grid-link', classes.root)}
+      data-cy={`${isExpanded ? 'hide' : 'show'}-fields-panel-${tablename}`}
+      onClick={handleClick}
+    >
       {message}
       <If condition={!isExpanded}>
         <KeyboardArrowDownIcon />

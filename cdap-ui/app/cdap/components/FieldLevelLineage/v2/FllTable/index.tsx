@@ -140,7 +140,11 @@ function renderGridBody(
         return <FllField key={field.id} field={field} isActive={isActiveField} />;
       })}
       <If condition={hasUnrelatedFields}>
-        <ExpandableField isExpanded={isExpanded} handleClick={handleClick} />
+        <ExpandableField
+          isExpanded={isExpanded}
+          handleClick={handleClick}
+          tablename={fields[0].dataset}
+        />
       </If>
     </div>
   );

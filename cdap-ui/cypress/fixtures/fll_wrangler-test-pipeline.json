@@ -47,7 +47,7 @@
                         "serviceFilePath": "${serviceFilePath}",
                         "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"iata\",\"type\":[\"string\",\"null\"]},{\"name\":\"name\",\"type\":[\"string\",\"null\"]},{\"name\":\"city\",\"type\":[\"string\",\"null\"]},{\"name\":\"state\",\"type\":[\"string\",\"null\"]},{\"name\":\"country\",\"type\":[\"string\",\"null\"]},{\"name\":\"latitude\",\"type\":[\"double\",\"null\"]},{\"name\":\"longitude\",\"type\":[\"double\",\"null\"]}]}",
                         "dataset": "fll_test",
-                        "referenceName": "airports",
+                        "referenceName": "airport_source",
                         "table": "airports"
                     }
                 },
@@ -105,7 +105,7 @@
                     "properties": {
                         "compressionCodec": "None",
                         "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"iata\",\"type\":\"string\"},{\"name\":\"city\",\"type\":\"string\"},{\"name\":\"country\",\"type\":\"string\"},{\"name\":\"latitude\",\"type\":\"double\"},{\"name\":\"longitude\",\"type\":\"double\"}]}",
-                        "name": "avro2"
+                        "name": "avro_sink"
                     }
                 },
                 "outputSchema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"iata\",\"type\":\"string\"},{\"name\":\"city\",\"type\":\"string\"},{\"name\":\"country\",\"type\":\"string\"},{\"name\":\"latitude\",\"type\":\"double\"},{\"name\":\"longitude\",\"type\":\"double\"}]}",

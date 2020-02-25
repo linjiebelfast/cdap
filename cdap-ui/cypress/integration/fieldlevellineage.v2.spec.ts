@@ -12,9 +12,10 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
  * the License.
-*/
+ */
 
 import * as Helpers from '../helpers';
+import { DEFAULT_GCP_PROJECTID, DEFAULT_GCP_SERVICEACCOUNT_PATH } from '../support/constants';
 
 let headers = {};
 const fllPipeline = `fll_pipeline_${Date.now()}`;
@@ -33,8 +34,22 @@ describe('Generating and navigating field level lineage for datasets', () => {
     });
   });
   before(() => {
-    // run a pipeline to generate lineage
-    Helpers.deployAndTestPipeline('fll_airport_pipeline2.json', fllPipeline, () => {
+    Helpers.deployAndTestPipeline('fll_wrangler-test-pipeline.json', fllPipeline, () => {
+      // Update and save runtime arguments
+      cy.get('.arrow-btn-container').click();
+      cy.get('[data-cy="key-value-pair-0"]').within(() => {
+        cy.get('.value-input')
+          .clear()
+          .type(DEFAULT_GCP_SERVICEACCOUNT_PATH);
+      });
+      cy.get('[data-cy="key-value-pair-1"]').within(() => {
+        cy.get('.value-input')
+          .clear()
+          .type(DEFAULT_GCP_PROJECTID);
+      });
+      cy.get('[data-cy="save-runtime-args-btn"]').click();
+
+      // Run pipeline to generate lineage
       cy.get('[data-cy="pipeline-run-btn"]').click();
       cy.get('[data-cy="Succeeded"]', { timeout: 360000 }).should('contain', 'Succeeded');
     });
@@ -44,7 +59,7 @@ describe('Generating and navigating field level lineage for datasets', () => {
     cy.cleanup_pipelines(headers, fllPipeline);
   });
   it('Should show lineage for the default time frame (last 7 days)', () => {
-    cy.visit('cdap/ns/default/datasets/Airport_sink/fields');
+    cy.visit('cdap/ns/default/datasets/avro_sink/fields');
     // should see last 7 days of lineage selected by default
     cy.get('[data-cy="fll-time-picker"]').should(($div) => {
       expect($div).to.contain('Last 7 days');
@@ -52,12 +67,23 @@ describe('Generating and navigating field level lineage for datasets', () => {
     // should see the correct fields for the selected dataset
     cy.get('[data-cy="target-fields"] .grid-row').within(($fields) => {
       // should see only 'body' field for the impact dataset, assuming no previous lineage exists
-      expect($fields).to.contain('body');
+      expect($fields).to.contain('longitude');
+      expect($fields).to.have.length(5);
+    });
+    cy.get('[data-cy="cause-fields"] .grid-row').within(($fields) => {
+      expect($fields).to.have.length(6);
+    });
+
+    // Show unrelated fields
+    cy.get('[data-cy="show-fields-panel-airport_source"]').click();
+    cy.get('[data-cy="cause-fields"] .grid-row').within(($fields) => {
+      expect($fields).to.contain('name');
+      expect($fields).to.have.length(8);
     });
   });
   it('Should show operations for target field', () => {
     // focus on a field with outgoing operations
-    cy.get('[data-cy="target-body"]').within(() => {
+    cy.get('[data-cy="target-country"]').within(() => {
       cy.get('[data-cy="fll-view-dropdown"]').click();
     });
     cy.get('[data-cy="fll-view-incoming"]').click();
