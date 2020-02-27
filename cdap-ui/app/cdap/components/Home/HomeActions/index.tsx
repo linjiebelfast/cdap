@@ -19,6 +19,7 @@ import withStyles, { WithStyles, StyleRules } from '@material-ui/core/styles/wit
 import { ActionConfig } from 'components/Home/HomeActions/ActionConfig';
 import ActionCard from 'components/Home/HomeActions/ActionCard';
 import Welcome from 'components/Home/Welcome';
+import ExperimentalFeature from 'components/Lab/ExperimentalFeature';
 
 const styles = (): StyleRules => {
   return {
@@ -47,7 +48,14 @@ const HomeActionsView: React.FC<WithStyles<typeof styles>> = ({ classes }) => {
       <div className={classes.scrollContainer}>
         <div className={classes.cardsContainer}>
           {ActionConfig.map((action) => {
-            return <ActionCard key={action.title} config={action} />;
+            const ac = action.experiment ? (
+              <ExperimentalFeature key={action.title} name={action.experiment}>
+                <ActionCard key={action.title} config={action} />
+              </ExperimentalFeature>
+            ) : (
+              <ActionCard key={action.title} config={action} />
+            );
+            return ac;
           })}
         </div>
       </div>

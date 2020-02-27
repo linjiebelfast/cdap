@@ -28,6 +28,11 @@ const batchRunsPath = '/namespaces/:namespace/runs';
 const pluginsPath =
   '/namespaces/:namespace/artifacts/:parentArtifact/versions/:version/extensions/:extension/plugins/:pluginName';
 
+const extensionsFetchBase =
+  '/namespaces/:namespace/artifacts/:pipelineType/versions/:version/extensions';
+const pluginFetchBase = extensionsFetchBase + '/:extensionType';
+const pluginsFetchPath = pluginFetchBase + '?scope=system';
+
 export const MyPipelineApi = {
   list: apiCreator(dataSrc, 'GET', 'REQUEST', '/namespaces/:namespace/apps'),
   publish: apiCreator(dataSrc, 'PUT', 'REQUEST', basepath),
@@ -45,6 +50,7 @@ export const MyPipelineApi = {
   getNextRunTime: apiCreator(dataSrc, 'GET', 'REQUEST', `${programPath}/nextruntime)`),
   fetchMacros: apiCreator(dataSrc, 'GET', 'REQUEST', `${basepath}/plugins`),
   fetchWidgetJson: apiCreator(dataSrc, 'GET', 'REQUEST', artifactBasePath),
+  fetchPlugins: apiCreator(dataSrc, 'GET', 'REQUEST', pluginsFetchPath),
   get: apiCreator(dataSrc, 'GET', 'REQUEST', basepath),
   pollStatistics: apiCreator(dataSrc, 'GET', 'REQUEST', statsPath),
   getNextRun: apiCreator(
