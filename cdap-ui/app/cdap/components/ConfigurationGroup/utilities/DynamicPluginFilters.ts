@@ -78,7 +78,7 @@ function evaluateConditionObj(filter: IPropertyFilter, propertyValues: IProperty
  * This is to check if the literal property has a macro.
  */
 function expressionContainMacro(filter: IPropertyFilter, propertyValues: IPropertyValues) {
-  const literals = (jexl._getLexer().tokenize(filter.condition.expression) || [])
+  const literals = (jexl.expr([])._lexer.tokenize(filter.condition.expression) || [])
     .filter((token) => token.type === 'identifier')
     .map((token) => token.value);
   const literalsWithMacro = literals.filter((literal) => {
