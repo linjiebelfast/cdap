@@ -37,18 +37,15 @@ describe('Generating and navigating field level lineage for datasets', () => {
     Helpers.deployAndTestPipeline('fll_wrangler-test-pipeline.json', fllPipeline, () => {
       // Update and save runtime arguments
       cy.get('.arrow-btn-container').click();
-      cy.get('[data-cy="key-value-pair-0"]').within(() => {
-        cy.get('.value-input')
-          .clear()
-          .type(DEFAULT_GCP_SERVICEACCOUNT_PATH);
-      });
-      cy.get('[data-cy="key-value-pair-1"]').within(() => {
-        cy.get('.value-input')
-          .clear()
-          .type(DEFAULT_GCP_PROJECTID);
-      });
+      cy.get('[data-cy="key-value-pair-0"] .value-input')
+        .focus()
+        .type(DEFAULT_GCP_SERVICEACCOUNT_PATH);
+      cy.get('[data-cy="key-value-pair-1"] .value-input')
+        .focus()
+        .type(DEFAULT_GCP_PROJECTID);
+      cy.get('.arrow-btn-container').click();
+      cy.screenshot('post-deploy');
       cy.get('[data-cy="save-runtime-args-btn"]').click();
-
       // Run pipeline to generate lineage
       cy.get('[data-cy="pipeline-run-btn"]').click();
       cy.get('[data-cy="Succeeded"]', { timeout: 360000 }).should('contain', 'Succeeded');
