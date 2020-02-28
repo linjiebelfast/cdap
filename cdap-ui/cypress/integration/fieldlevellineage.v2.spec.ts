@@ -43,9 +43,8 @@ describe('Generating and navigating field level lineage for datasets', () => {
       cy.get('[data-cy="key-value-pair-1"] .value-input')
         .focus()
         .type(DEFAULT_GCP_PROJECTID);
-      cy.get('.arrow-btn-container').click();
-      cy.screenshot('post-deploy');
       cy.get('[data-cy="save-runtime-args-btn"]').click();
+
       // Run pipeline to generate lineage
       cy.get('[data-cy="pipeline-run-btn"]').click();
       cy.get('[data-cy="Succeeded"]', { timeout: 360000 }).should('contain', 'Succeeded');
