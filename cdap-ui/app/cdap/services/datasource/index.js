@@ -280,6 +280,7 @@ export default class Datasource {
       .filter(subscriptionID => this.bindings[subscriptionID].type === 'POLL')
       .forEach(subscriptionID => {
         clearInterval(this.bindings[subscriptionID].resource.interval);
+        this.bindings[subscriptionID].resource.interval = null;
       });
   }
 
@@ -287,7 +288,7 @@ export default class Datasource {
     Object.keys(this.bindings)
       .filter(subscriptionID => this.bindings[subscriptionID].type === 'POLL')
       .forEach(subscriptionID => {
-        this.bindings[subscriptionID].resource.interval = this.startClientPoll(subscriptionID, this.bindings[subscriptionID].resource);
+        this.bindings[subscriptionID].resource.interval = this.startClientPoll(subscriptionID, this.bindings[subscriptionID].resource.intervalTime);
       });
   }
 
