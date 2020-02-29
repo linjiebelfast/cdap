@@ -32,17 +32,22 @@ import 'rxjs/add/operator/combineLatest';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/debounceTime';
-import WindowManager, {WINDOW_ON_BLUR, WINDOW_ON_FOCUS} from 'services/WindowManager';
+import { WINDOW_ON_BLUR, WINDOW_ON_FOCUS } from 'services/WindowManager';
 
-var CDAP_API_VERSION = 'v3';
+const CDAP_API_VERSION = 'v3';
 // FIXME (CDAP-14836): Right now this is scattered across node and client. Need to consolidate this.
 const REQUEST_ORIGIN_ROUTER = 'ROUTER';
+const POLLSTATE = {
+  PAUSED: 'PAUSED',
+  ACTIVE: 'ACTIVE',
+};
 
 export default class Datasource {
   constructor(genericResponseHandlers = [() => true]) {
     this.eventEmitter = ee(ee);
     let socketData = Socket.getObservable();
     this.bindings = {};
+    this.pollState = POLLSTATE.ACTIVE;
 
     this.socketSubscription = socketData.subscribe((data) => {
       let hash = data.resource.id;
@@ -154,11 +159,16 @@ export default class Datasource {
 
     let subject = new Subject();
 
-    this.bindings[generatedResource.id] = {
-      rx: subject,
-      resource: generatedResource,
-      type: 'REQUEST',
-    };
+    // We are calling the same request from the polling function as well.
+    // It is essentially requests every 10 seconds or so. So for those calls
+    // the id is already added to the bindings.
+    if (!this.bindings[generatedResource.id]) {
+      this.bindings[generatedResource.id] = {
+        rx: subject,
+        resource: generatedResource,
+        type: 'REQUEST',
+      };
+    }
 
     this.socketSend('request', generatedResource);
 
@@ -166,9 +176,12 @@ export default class Datasource {
   }
 
   poll(resource = {}) {
+    const id = uuidV4();
+    const intervalTime = resource.interval || 10000;
     let generatedResource = {
-      id: uuidV4(),
-      interval: resource.interval || 10000,
+      id,
+      interval: this.startClientPoll(id, intervalTime),
+      intervalTime,
       json: resource.json || true,
       method: resource.method || 'GET',
       suppressErrors: resource.suppressErrors || false,
@@ -230,14 +243,25 @@ export default class Datasource {
       type: 'POLL',
     };
 
-    this.socketSend('poll-start', generatedResource);
+    this.socketSend('request', generatedResource);
 
     return observable;
   }
 
+  startClientPoll = (resourceId, interval) => {
+    const intervalTimer = setInterval(() => {
+      const resource = this.bindings[resourceId].resource;
+      if (!resource) {
+        clearInterval(intervalTimer);
+        return;
+      }
+      this.socketSend('request', resource);
+    }, interval);
+    return intervalTimer;
+  }
+
   stopPoll(resourceId) {
     let id;
-
     if (typeof resourceId === 'object' && resourceId !== null) {
       id = resourceId.params.pollId;
     } else {
@@ -245,11 +269,7 @@ export default class Datasource {
     }
 
     if (this.bindings[id]) {
-      Socket.send({
-        action: 'poll-stop',
-        resource: this.bindings[id].resource,
-      });
-
+      clearInterval(this.bindings[id].resource.interval);
       this.bindings[id].rx.unsubscribe();
       delete this.bindings[id];
     }
@@ -259,11 +279,7 @@ export default class Datasource {
     Object.keys(this.bindings)
       .filter(subscriptionID => this.bindings[subscriptionID].type === 'POLL')
       .forEach(subscriptionID => {
-
-        Socket.send({
-          action: 'poll-stop',
-          resource: this.bindings[subscriptionID].resource,
-        });
+        clearInterval(this.bindings[subscriptionID].resource.interval);
       });
   }
 
@@ -271,10 +287,7 @@ export default class Datasource {
     Object.keys(this.bindings)
       .filter(subscriptionID => this.bindings[subscriptionID].type === 'POLL')
       .forEach(subscriptionID => {
-        Socket.send({
-          action: 'poll-start',
-          resource: this.bindings[subscriptionID].resource,
-        });
+        this.bindings[subscriptionID].resource.interval = this.startClientPoll(subscriptionID, this.bindings[subscriptionID].resource);
       });
   }
 
